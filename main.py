@@ -21,19 +21,22 @@ driver.get("https://www.bing.com/search?form=NTPCHB&q=Bing+AI&showconv=1")
 def find_mic_button():
     mic_button = None
     reach_micbutton_when_searchbox_focus_script = """
-        return document.querySelector("#b_sydConvCont > cib-serp").shadowRoot.querySelector("#cib-action-bar-main").shadowRoot.querySelector("div > div.main-container > div > div.input-row > div > div > button");
+        return document.querySelector("#b_sydConvCont > cib-serp").shadowRoot.querySelector("#cib-action-bar-main").shadowRoot.querySelector("div > div.main-container > div > div.input-row > div > div > button")
      """
-    # reach_micbutton_when_searchbox_outfocus_script = """
-    #     return document.querySelector("#b_sydConvCont > cib-serp").shadowRoot.querySelector("#cib-action-bar-main").shadowRoot.querySelector("#cib-speech-icon").shadowRoot.querySelector("button")
-    # """
     try:
-        find_search_box().click() # must focus the searchbox before clicking mic button
+        # find_search_box().click() # must focus the searchbox before clicking mic button
         mic_button = driver.execute_script(reach_micbutton_when_searchbox_focus_script)
 
     except Exception as e:
         print(e)
 
     return mic_button
+
+
+def focus_searchbox():
+    sb = find_search_box()
+    sb.click()
+    sb.clear()
 
 
 # Function to find the search box by its ID using XPath
@@ -97,6 +100,8 @@ def on_key_event(e):
                 take_screenshot()
                 time.sleep(0.5)
                 paste_screenshot()
+            elif e.name.lower() == "h":
+                focus_searchbox()
     except Exception as e:
         print(f"Error: {e}")
 
