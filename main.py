@@ -16,13 +16,16 @@ chrome_options.add_argument("--use-fake-ui-for-media-stream")  # allows mic
 driver = webdriver.Chrome(options=chrome_options)
 driver.get("https://www.bing.com/search?form=NTPCHB&q=Bing+AI&showconv=1")
 
+reach_micbutton_script = """
+    return document.querySelector("#b_sydConvCont > cib-serp").shadowRoot.querySelector("#cib-action-bar-main").shadowRoot.querySelector("div > div.main-container > div > div.input-row > div > div > button")
+"""
+reach_micbutton_script2 = """
+    return document.querySelector("#b_sydConvCont > cib-serp").shadowRoot.querySelector("#cib-action-bar-main").shadowRoot.querySelector("#cib-speech-icon").shadowRoot.querySelector("button")
+"""
 
-def find_mic_button():
+def find_mic_button(script):
     try:
-        reach_micbutton_script = """
-            return document.querySelector("#b_sydConvCont > cib-serp").shadowRoot.querySelector("#cib-action-bar-main").shadowRoot.querySelector("div > div.main-container > div > div.input-row > div > div > button")
-        """
-        mic_button = driver.execute_script(reach_micbutton_script)
+        mic_button = driver.execute_script(script)
         return mic_button
     except Exception as e:
         print(f"Error finding mic button: {e}")
@@ -87,8 +90,10 @@ def clear_input():
         return document.querySelector("#b_sydConvCont > cib-serp").shadowRoot.querySelector("#cib-action-bar-main").shadowRoot.querySelector("div > div.main-container > div > cib-attachment-list").shadowRoot.querySelector("cib-file-item").shadowRoot.querySelector("button");
     """
     btn = driver.execute_script(reach_dismiss_button_script)
-    if btn:
+    try:
         btn.click()
+    except Exception as e:
+        print("There was no image to delete.")
 
 
 # Callback function for key events
@@ -98,8 +103,11 @@ def on_key_event(e):
             # record
             # --------------------------------
             if e.name == "3" and isNumpad(e):
-                focus_searchbox() # must do before click on mic button
-                mic_button = find_mic_button()
+                is_inp_empty = find_search_box().get_attribute("value") == ""
+                if is_inp_empty:
+                    mic_button = find_mic_button(reach_micbutton_script)
+                else:
+                    mic_button = find_mic_button(reach_micbutton_script2)
                 if mic_button:
                     time.sleep(0.1)
                     mic_button.click()
