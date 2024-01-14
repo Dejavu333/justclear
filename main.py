@@ -14,14 +14,21 @@ from selenium.webdriver.common.keys import Keys
 ########################################################################################################################
 # functions
 ########################################################################################################################
-def find_mic_button(script):
+def record():
+    reach_mic_button_script1 = """
+        return document.querySelector("#b_sydConvCont > cib-serp").shadowRoot.querySelector("#cib-action-bar-main").shadowRoot.querySelector("div > div.main-container > div > div.input-row > div > div > button")
+    """
+    reach_mic_button_script2 = """
+        return document.querySelector("#b_sydConvCont > cib-serp").shadowRoot.querySelector("#cib-action-bar-main").shadowRoot.querySelector("#cib-speech-icon").shadowRoot.querySelector("button")
+    """
     try:
-        mic_button = driver.execute_script(script)
-        return mic_button
-    except Exception as e:
-        print(f"Error finding mic button: {e}")
-    return None
-
+        driver.execute_script(reach_mic_button_script1).click()
+    except:
+        print(f"Error clicking mic button using script1.")
+    try:
+        driver.execute_script(reach_mic_button_script2).click()
+    except:
+        print(f"Error clicking mic button using script1.")
 
 def focus_searchbox():
     sb = find_search_box()
@@ -46,7 +53,7 @@ def print_screen_to_clipboard():
         window_rect = active_window.box
         screenshot = ImageGrab.grab(window_rect)
 
-        # save the image to the clipboard
+        # saves the image to the clipboard
         output = BytesIO()
         screenshot.convert("RGB").save(output, "BMP")
         data = output.getvalue()[14:]
@@ -61,12 +68,10 @@ def print_screen_to_clipboard():
 def paste_screenshot_to_searchbox():
     search_box = find_search_box()
     if search_box:
-        # use send_keys to insert clipboard contents directly
+        # inserts clipboard contents directly
         search_box.send_keys(Keys.CONTROL, 'v')
         # desc for the img
         search_box.send_keys("Help me.")  # todo variable
-        # wait uploading
-        time.sleep(2)
 
 
 def submit_input():
@@ -90,14 +95,7 @@ def on_key_event(e):
             # record
             # --------------------------------
             if e.name == "3" and is_numpad(e):
-                is_inp_empty = find_search_box().get_attribute("value") == ""
-                if is_inp_empty:
-                    mic_button = find_mic_button(reach_micbutton_script)
-                else:
-                    mic_button = find_mic_button(reach_micbutton_script2)
-                if mic_button:
-                    time.sleep(0.1)
-                    mic_button.click()
+                record()
             # focus / stop record
             # --------------------------------
             elif e.name == "2" and is_numpad(e):
@@ -116,7 +114,7 @@ def on_key_event(e):
                 print_screen_to_clipboard()
                 time.sleep(0.5)
                 paste_screenshot_to_searchbox()
-            # reload the page
+            # page reload
             # --------------------------------
             elif e.name == "7" and is_numpad(e):
                 driver.refresh()
@@ -131,26 +129,19 @@ def is_numpad(e):
 ########################################################################################################################
 # main
 ########################################################################################################################
-# set up Selenium WebDriver
+# sets up Selenium WebDriver
 chrome_options = Options()
 chrome_options.add_argument("--use-fake-ui-for-media-stream")  # allows mic
 driver = webdriver.Chrome(options=chrome_options)
 driver.get("https://www.bing.com/search?form=NTPCHB&q=Bing+AI&showconv=1")
 
-reach_micbutton_script = """
-    return document.querySelector("#b_sydConvCont > cib-serp").shadowRoot.querySelector("#cib-action-bar-main").shadowRoot.querySelector("div > div.main-container > div > div.input-row > div > div > button")
-"""
-reach_micbutton_script2 = """
-    return document.querySelector("#b_sydConvCont > cib-serp").shadowRoot.querySelector("#cib-action-bar-main").shadowRoot.querySelector("#cib-speech-icon").shadowRoot.querySelector("button")
-"""
-
-# register the callback function for key events
+# registers the callback function for key events
 keyboard.hook(on_key_event)
 
 try:
-    # keep the script running
+    # keeps the script running
     keyboard.wait("esc")
 finally:
-    # clean up resources
+    # cleans up resources
     keyboard.unhook_all()
     driver.quit()
