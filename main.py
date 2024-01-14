@@ -10,19 +10,10 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 
-# Set up Selenium WebDriver
-chrome_options = Options()
-chrome_options.add_argument("--use-fake-ui-for-media-stream")  # allows mic
-driver = webdriver.Chrome(options=chrome_options)
-driver.get("https://www.bing.com/search?form=NTPCHB&q=Bing+AI&showconv=1")
 
-reach_micbutton_script = """
-    return document.querySelector("#b_sydConvCont > cib-serp").shadowRoot.querySelector("#cib-action-bar-main").shadowRoot.querySelector("div > div.main-container > div > div.input-row > div > div > button")
-"""
-reach_micbutton_script2 = """
-    return document.querySelector("#b_sydConvCont > cib-serp").shadowRoot.querySelector("#cib-action-bar-main").shadowRoot.querySelector("#cib-speech-icon").shadowRoot.querySelector("button")
-"""
-
+########################################################################################################################
+# functions
+########################################################################################################################
 def find_mic_button(script):
     try:
         mic_button = driver.execute_script(script)
@@ -49,14 +40,13 @@ def find_search_box():
         return None
 
 
-# take a screenshot of the active window and save it to the clipboard
-def print_screen():
+def print_screen_to_clipboard():
     active_window = gw.getActiveWindow()
     if active_window:
         window_rect = active_window.box
         screenshot = ImageGrab.grab(window_rect)
 
-        # Save the image to the clipboard
+        # save the image to the clipboard
         output = BytesIO()
         screenshot.convert("RGB").save(output, "BMP")
         data = output.getvalue()[14:]
@@ -68,15 +58,14 @@ def print_screen():
         win32clipboard.CloseClipboard()
 
 
-# focus on the search box and paste the screenshot
-def paste_screenshot():
+def paste_screenshot_to_searchbox():
     search_box = find_search_box()
     if search_box:
-        # Use send_keys to insert clipboard contents directly
+        # use send_keys to insert clipboard contents directly
         search_box.send_keys(Keys.CONTROL, 'v')
-        # Desc for the img
+        # desc for the img
         search_box.send_keys("Help me.")  # todo variable
-        # Wait uploading
+        # wait uploading
         time.sleep(2)
 
 
@@ -89,20 +78,18 @@ def clear_input():
     reach_dismiss_button_script = """
         return document.querySelector("#b_sydConvCont > cib-serp").shadowRoot.querySelector("#cib-action-bar-main").shadowRoot.querySelector("div > div.main-container > div > cib-attachment-list").shadowRoot.querySelector("cib-file-item").shadowRoot.querySelector("button");
     """
-    btn = driver.execute_script(reach_dismiss_button_script)
     try:
-        btn.click()
-    except Exception as e:
+        driver.execute_script(reach_dismiss_button_script).click()
+    except:
         print("There was no image to delete.")
 
 
-# Callback function for key events
 def on_key_event(e):
     try:
         if e.event_type == keyboard.KEY_DOWN:
             # record
             # --------------------------------
-            if e.name == "3" and isNumpad(e):
+            if e.name == "3" and is_numpad(e):
                 is_inp_empty = find_search_box().get_attribute("value") == ""
                 if is_inp_empty:
                     mic_button = find_mic_button(reach_micbutton_script)
@@ -113,41 +100,57 @@ def on_key_event(e):
                     mic_button.click()
             # focus / stop record
             # --------------------------------
-            elif e.name == "2" and isNumpad(e):
+            elif e.name == "2" and is_numpad(e):
                 focus_searchbox()  # focusing the searchbox stops recording too
             # clear
             # --------------------------------
-            elif e.name == "1" and isNumpad(e):
+            elif e.name == "1" and is_numpad(e):
                 clear_input()
             # submit
             # --------------------------------
-            elif e.name == 'enter' and isNumpad(e):
+            elif e.name == 'enter' and is_numpad(e):
                 submit_input()
             # prtsc
             # --------------------------------
             elif keyboard.is_pressed('del'):
-                print_screen()
+                print_screen_to_clipboard()
                 time.sleep(0.5)
-                paste_screenshot()
-            # Reload the page
+                paste_screenshot_to_searchbox()
+            # reload the page
             # --------------------------------
-            elif e.name == "7" and isNumpad(e):
+            elif e.name == "7" and is_numpad(e):
                 driver.refresh()
     except Exception as e:
         print(f"Error: {e}")
 
 
-def isNumpad(e):
+def is_numpad(e):
     return e.event_type == keyboard.KEY_DOWN and e.is_keypad
 
 
-# Register the callback function for key events
+########################################################################################################################
+# main
+########################################################################################################################
+# set up Selenium WebDriver
+chrome_options = Options()
+chrome_options.add_argument("--use-fake-ui-for-media-stream")  # allows mic
+driver = webdriver.Chrome(options=chrome_options)
+driver.get("https://www.bing.com/search?form=NTPCHB&q=Bing+AI&showconv=1")
+
+reach_micbutton_script = """
+    return document.querySelector("#b_sydConvCont > cib-serp").shadowRoot.querySelector("#cib-action-bar-main").shadowRoot.querySelector("div > div.main-container > div > div.input-row > div > div > button")
+"""
+reach_micbutton_script2 = """
+    return document.querySelector("#b_sydConvCont > cib-serp").shadowRoot.querySelector("#cib-action-bar-main").shadowRoot.querySelector("#cib-speech-icon").shadowRoot.querySelector("button")
+"""
+
+# register the callback function for key events
 keyboard.hook(on_key_event)
 
 try:
-    # Keep the script running
+    # keep the script running
     keyboard.wait("esc")
 finally:
-    # Clean up resources
+    # clean up resources
     keyboard.unhook_all()
     driver.quit()
