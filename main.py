@@ -1,7 +1,7 @@
 import keyboard
 import time
 import pygetwindow as gw
-from PIL import ImageGrab
+from PIL import ImageGrab # pillow
 from io import BytesIO
 import win32clipboard  # pywin32
 
@@ -16,19 +16,29 @@ from selenium.webdriver.common.keys import Keys
 ########################################################################################################################
 def record():
     reach_mic_button_script1 = """
-        return document.querySelector("#b_sydConvCont > cib-serp").shadowRoot.querySelector("#cib-action-bar-main").shadowRoot.querySelector("div > div.main-container > div > div.input-row > div > div > button")
+        return document.querySelector("#b_sydConvCont > cib-serp").shadowRoot.querySelector("#cib-action-bar-main").shadowRoot.querySelector("div > div.main-container > div > div.bottom-controls > div > div.bottom-right-controls > div.control.mic > button")
     """
     reach_mic_button_script2 = """
         return document.querySelector("#b_sydConvCont > cib-serp").shadowRoot.querySelector("#cib-action-bar-main").shadowRoot.querySelector("#cib-speech-icon").shadowRoot.querySelector("button")
     """
+    reach_mic_button_script3 = """
+        return document.querySelector("#b_sydConvCont > cib-serp").shadowRoot.querySelector("#cib-action-bar-main").shadowRoot.querySelector("div > div.main-container > div > div.input-row > div > div > button")
+    """
     try:
+        print("Trying script1...")
         driver.execute_script(reach_mic_button_script1).click()
     except:
         print(f"Error clicking mic button using script1.")
-    try:
-        driver.execute_script(reach_mic_button_script2).click()
-    except:
-        print(f"Error clicking mic button using script1.")
+        try:
+            print("Trying script2...")
+            driver.execute_script(reach_mic_button_script2).click()
+        except:
+            print(f"Error clicking mic button using script2.")
+            try:
+                print("Trying script3...")
+                driver.execute_script(reach_mic_button_script3).click()
+            except:
+                print(f"Error clicking mic button using script3.")
 
 def focus_searchbox():
     sb = find_search_box()
@@ -58,7 +68,6 @@ def print_screen_to_clipboard():
         screenshot.convert("RGB").save(output, "BMP")
         data = output.getvalue()[14:]
         output.close()
-
         win32clipboard.OpenClipboard()
         win32clipboard.EmptyClipboard()
         win32clipboard.SetClipboardData(win32clipboard.CF_DIB, data)
@@ -71,7 +80,7 @@ def paste_screenshot_to_searchbox():
         # inserts clipboard contents directly
         search_box.send_keys(Keys.CONTROL, 'v')
         # desc for the img
-        search_box.send_keys("Help me.")  # todo variable
+        search_box.send_keys("Help me solving this problem. Be simple and reasonable and solve the problem.")  # todo variable
 
 
 def submit_input():
